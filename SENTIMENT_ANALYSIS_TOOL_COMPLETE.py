@@ -38,8 +38,12 @@ from datetime import date
 import datetime
 import pandas as pd
 import numpy as np
+# running wordcloud code
+from wordcloud import WordCloud, STOPWORDS
+import nltk
+from nltk.corpus import stopwords
 from googletrans import Translator
-
+from tracemalloc import stop
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.models import Sequential
@@ -398,230 +402,17 @@ def combined_scrappers(list):
 
     final_df.to_csv("complete_data.csv")
 
+
 def model():
-    #!/usr/bin/env python
-    # coding: utf-8
-    # Sentiment Analysis Framework
-    # Reading dataset
-    df = pd.read_csv("./Tweets.csv")
-    # Printing data frames head
-    df.head()
-    # Printing columns
-    df.columns
 
-    # Extracting reviews and their tags
-    tweet_df = df[['text','airline_sentiment']]
-    print(tweet_df.shape)
-    tweet_df.head(5)
-
-    # Removing neutral reviews
-    tweet_df = tweet_df[tweet_df['airline_sentiment'] != 'neutral']
-    print(tweet_df.shape)
-    tweet_df.head(5)
-
-    # Counting values
-    tweet_df["airline_sentiment"].value_counts()
-
-    # factorizing the tags into 0 and 1
-    sentiment_label = tweet_df.airline_sentiment.factorize()
-    sentiment_label
-
-
-    # Tokenization of the review column
-    tweet = tweet_df.text.values
-    tokenizer = Tokenizer(num_words=5000)
-    tokenizer.fit_on_texts(tweet)
-    vocab_size = len(tokenizer.word_index) + 1
-    encoded_docs = tokenizer.texts_to_sequences(tweet)
-    padded_sequence = pad_sequences(encoded_docs, maxlen=200)
-
-    # In[8]:
-    # printing word index
-    print(tokenizer.word_index)
-
-    # In[9]:
-    # printing tweets and their encoded docs
-    print(tweet[0])
-    print(encoded_docs[0])
-
-   
-    # printing the padded sequence
-    print(padded_sequence[0])
+    # Useful Librarie
+    from keras.preprocessing.text import Tokenizer
+    from keras.preprocessing.sequence import pad_sequences
+    from keras.models import Sequential
+    from keras.layers import LSTM,Dense, Dropout, SpatialDropout1D
+    from keras.layers import Embedding
 
     
-    # building the model
-    embedding_vector_length = 32
-    model = Sequential() 
-    model.add(Embedding(vocab_size, embedding_vector_length, input_length=200) )
-    model.add(SpatialDropout1D(0.25))
-    model.add(LSTM(50, dropout=0.5, recurrent_dropout=0.5))
-    model.add(Dropout(0.2))
-    model.add(Dense(1, activation='sigmoid')) 
-    model.compile(loss='binary_crossentropy',optimizer='adam', metrics=['accuracy'])  
-    print(model.summary()) 
-
-    # In[12]:
-    # running the model
-    history = model.fit(padded_sequence,sentiment_label[0],validation_split=0.2, epochs=5, batch_size=32)
-
-   
-    # plotting the result graphs
-    plt.plot(history.history['accuracy'], label='acc')
-    plt.plot(history.history['val_accuracy'], label='val_acc')
-    plt.legend()
-    plt.show()
-    plt.savefig("Accuracy plot.jpg")
-
-   
-    # plotting the result graphs
-    plt.plot(history.history['loss'], label='loss')
-    plt.plot(history.history['val_loss'], label='val_loss')
-    plt.legend()
-    plt.show()
-    plt.savefig("Loss plot.jpg")
-
-    
-    # function for running different statements in the model
-    def predict_sentiment(text):
-        tw = tokenizer.texts_to_sequences([text])
-        tw = pad_sequences(tw,maxlen=200)
-        prediction = int(model.predict(tw).round().item())
-        # print("Predicted label: ", sentiment_label[1][prediction])
-        # print(sentiment_label[1][prediction])
-        return sentiment_label[1][prediction]
-
-
-   
-    # testing 
-    test_sentence1 = "I enjoyed my journey on this flight."
-    print(predict_sentiment(test_sentence1))
-
-    test_sentence2 = "This is the worst flight experience of my life!"
-    print(predict_sentiment(test_sentence2))
-
-  
-    # testing 
-    test_sentence3 = "I have never enjoyed my journey on this flight."
-    print(predict_sentiment(test_sentence3))
-
-    test_sentence4 = "This is not the slowest flight experience of my life."
-    print(predict_sentiment(test_sentence4))
-
-    # %%
-    # testing 
-    test_sentence5 = "I do hate this tool"
-    print(predict_sentiment(test_sentence5))
-
-    test_sentence6 = "This is not perfect flight ever"
-    print(predict_sentiment(test_sentence6))
-    
-    # YAP Google app
-    yap_reviews = reviews_all(
-        'com.yap.banking',
-        sleep_milliseconds=0, # defaults to 0
-        lang='en', # defaults to 'en'
-        country='us', # defaults to 'us'
-        sort=Sort.NEWEST, # defaults to Sort.MOST_RELEVANT
-    )
-
-    
-
-    df_reviews = pd.DataFrame(np.array(yap_reviews),columns=['review'])
-    df_reviews = df_reviews.join(pd.DataFrame(df_reviews.pop('review').tolist()))
-
-    # df_reviews.head(10)
-    spec_chars = ["!",'"',"#","%","&","'","(",")",
-                "*","+",",","-",".","/",":",";","<",
-                "=",">","?","@","[","\\","]","^","_",
-                "`","{","|","}","~","–"]
-    for char in spec_chars:
-        df_reviews['content'] = df_reviews['content'].str.replace(char, ' ')
-
-    df_reviews['content'] = df_reviews['content'].str.split().str.join(" ")
-
-    df_reviews = df_reviews.dropna(subset=['content'])
-
-    df_reviews_copy = df_reviews.copy(deep=True)
-
-    # %%
-    # for i in df_reviews["content"][:row_number]:
-    #     translator = google_translator()
-    #     i = translator.translate(i, lang_src="auto", lang_tgt="en")
-    #     df_reviews["content"][i] = i
-    # translator = google_translator()
-    # translator = Translator()
-    # df_reviews['English_content'] = df_reviews['content'].apply(translator.translate, src='auto', dest='en').apply(getattr, args=('text',))
-    # df  
-    # df_reviews["content"] = df_reviews["content"].apply(lambda x: translator.translate(x, lang_tgt="en"))
-    # translations = {}
-
-    # count = 0
-    # for i in df_reviews["content"]:
-        # print(type(i))
-        # if i != None:
-        #     translated_obj = translator.translate(i)
-        #     df_reviews['content'][count] = translated_obj.text 
-        # count += 1
-        # unique elements of the column
-    # for column in df_reviews:
-    #     unique_elements = df_reviews[column].unique()
-    #     for element in unique_elements:
-    #         # add translation to the dictionary
-    #         translations[element] = translator.translate(element).text
-
-    
-    # df_reviews['content'].info
-    df_reviews.head(5)
-
-    count = 0
-    df_reviews["tag"] = np.nan
-    for i in df_reviews["content"]:
-        df_reviews["tag"][count] = predict_sentiment(i)
-        count += 1
-    
-    df_reviews
-    
-    df_reviews["tag"].value_counts()
-    
-    df_reviews["content"]
-
-    # first_col = df_reviews['content'].values.tolist()
-    # second_col = df_reviews['tag'].values.tolist()
-    final_csv = df_reviews.copy(deep=True)
-   
-    # temp = pd.DataFrame([first_col, second_col], columns=['review', 'tag'])
-    temp = df_reviews[['content', 'tag']].copy()
-    temp.to_csv('selected_columns.csv')
-    final_csv.to_csv('entire_df.csv')
-    temp
-  
-def new_model():
-    # Sentiment Analysis Framework
-    # Complete model which will do the following things:
-    # Classify whether a review is positve or negative
-    # Emojis and emoticons tagging
-    # Work for every language
-    # Cattering Roman Urdu 
-    # Data cleaning
-    # EDA
-    # Making suitable plots
-    # Converting results in a data frame
-    # And much more ...
-
-    # In[1]:
-    # Useful Libraries
-    from tracemalloc import stop
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    from tensorflow.keras.preprocessing.text import Tokenizer
-    from tensorflow.keras.preprocessing.sequence import pad_sequences
-    from tensorflow.keras.models import Sequential
-    from tensorflow.keras.layers import LSTM,Dense, Dropout, SpatialDropout1D
-    from tensorflow.keras.layers import Embedding
-
-    # In[1]:
     # Reading data sets for training our model
     df_tweets_entire = pd.read_csv("./Tweets.csv")
     df_roman_entire = pd.read_csv("./Roman Urdu DataSet.csv")
@@ -709,20 +500,19 @@ def new_model():
     encoded_docs = tokenizer.texts_to_sequences(comments)
     padded_sequence = pad_sequences(encoded_docs, maxlen=200)
 
-    # %%
+    
     # printing word index
     print(tokenizer.word_index)
 
-    # %%
     # printing tweets and their encoded docs
     print(comments[0])
     print(encoded_docs[0])
 
-    # %%
+    
     # printing the padded sequence
     print(padded_sequence[0])
 
-    # %%
+    
     # building the model
     embedding_vector_length = 32
     model = Sequential() 
@@ -734,11 +524,11 @@ def new_model():
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])  
     print(model.summary()) 
 
-    # %%
+    
     # running the model
     history = model.fit(padded_sequence, factorized_sentiment[0], validation_split=0.2, epochs=5, batch_size=32)
 
-    # %%
+    
     # plotting the result graphs
     plt.plot(history.history['accuracy'], label='acc')
     plt.plot(history.history['val_accuracy'], label='val_acc')
@@ -746,7 +536,7 @@ def new_model():
     plt.show()
     plt.savefig("Accuracy plot.jpg")
 
-    # %%
+    
     # plotting the result graphs
     plt.plot(history.history['loss'], label='loss')
     plt.plot(history.history['val_loss'], label='val_loss')
@@ -754,7 +544,7 @@ def new_model():
     plt.show()
     plt.savefig("Loss plot.jpg")
 
-    # %%
+    
     # function for running different statements in the model
     def predict_sentiment(text):
         tw = tokenizer.texts_to_sequences([text])
@@ -762,7 +552,7 @@ def new_model():
         prediction = int(model.predict(tw).round().item())
         return factorized_sentiment[1][prediction]
 
-    # %%
+    
     # testing 
     test_sentence1 = "I enjoyed my journey on this flight."
     print(predict_sentiment(test_sentence1))
@@ -770,18 +560,18 @@ def new_model():
     test_sentence2 = "This is the worst flight experience of my life!"
     print(predict_sentiment(test_sentence2))
 
-    # %%
+    
     # testing
     test_sentence3 = "bura ha"
     print(predict_sentiment(test_sentence3))
 
-    # %%
+    
     # testing
     test_sentence4 = "😭"
     print(predict_sentiment(test_sentence4))
-    # %%
+    
 
-    # %%
+    
     # emoticons work
     emoticon = {":-)":"happy", ":)":"happy", ":-(":"sad", ":(":"sad", ":*":"happy", ";)":"happy", ";-)":"happy", "<3":"happy", ":/":"sad"}
     test_sentence5 = ":-("
@@ -797,13 +587,11 @@ def new_model():
     final_test_senetence5 = " ".join(reformed)
     print(final_test_senetence5)
 
-    # %%
+    
     print(predict_sentiment(final_test_senetence5))
-
-    # %%
     print(predict_sentiment("I love this app"))
 
-    # %%
+    
     # importing complete data set and converting it to lower case
     # df_test = pd.read_csv("./complete_data.csv")
     df_test = pd.read_csv("./final_csv_file.csv")
@@ -812,12 +600,9 @@ def new_model():
     df_test["Review"]= df_test["Review"].map(str)
     df_test["Review"] = df_test["Review"].apply(str.lower)
 
-    df_test.head(5)
-
-    # %%
+    df_test.head(5)    
     print(df_test["Review"])
 
-    # %%
     # Running data set on the new model
     count = 0
     df_test["Sentiment"] = np.nan
@@ -826,22 +611,15 @@ def new_model():
         count += 1
 
     # Reviewing final data frame
-    # %%
     df_test.head(5)
 
     # Printing shape of data set
-    # %%
     df_test.shape
     df_test['Review']
 
     # Converting data frame to a csv file
-    # %%
     df_test.to_csv('final_data.csv')
-    # %%
-    # running wordcloud code
-    from wordcloud import WordCloud, STOPWORDS
-    import nltk
-    from nltk.corpus import stopwords
+    
     # Create stopword list:
     stopwords = set(STOPWORDS)
     stopwords.update(["br", "href"])
@@ -851,4 +629,4 @@ def new_model():
     plt.axis("off")
     plt.savefig('wordcloud.png')
     plt.show()
-    # %%
+    
