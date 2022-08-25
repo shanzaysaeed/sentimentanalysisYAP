@@ -19,10 +19,6 @@ scraper_list = ["playstore" , "appstore" ,"twitter" , "facebook" ,"instagram"]
 
 
 
-
-
-
-
 # ❌❌❌❌❌❌DONOT EDIT THE CODE BELOW ❌❌❌❌❌
 
 # Useful Libraries 
