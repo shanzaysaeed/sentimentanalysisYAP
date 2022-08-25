@@ -40,11 +40,16 @@ import nltk
 from nltk.corpus import stopwords
 from googletrans import Translator
 from tracemalloc import stop
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-from keras.models import Sequential
-from keras.layers import LSTM,Dense, Dropout, SpatialDropout1D
-from keras.layers import Embedding
+from tracemalloc import stop
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM,Dense, Dropout, SpatialDropout1D
+from tensorflow.keras.layers import Embedding
 
 
 def playstore_scrapper():
@@ -290,9 +295,7 @@ def instagram_scrapper():
     insta_comment("yappakistan")
     insta_comment("yapuae")
 
-def combined_scrappers(list):
-
-    list = scraper_list
+def combined_scrappers():
     
     # Reading all data from CSVs
     # concating all data in seprate lists
@@ -304,6 +307,7 @@ def combined_scrappers(list):
     for items in scraper_list:
         
         if items == "playstore":
+            print ("\n\nExtracting PlayStore Reviews")
             playstore_scrapper()
             df_playstore = pd.read_csv("./GoogleStore.csv", index_col=0)
             df_playstore.insert(0, 'Source', 'playstore')
@@ -313,6 +317,7 @@ def combined_scrappers(list):
             review.append(list(df_playstore["content"]))
 
         if items == "appstore":
+            print ("\n\nExtracting AppStore Reviews")
             appstore_scrapper()
             df_appstore = pd.read_csv("./AppStore.csv", index_col=0)
             df_appstore.insert(0, 'Source', 'appstore')
@@ -322,6 +327,8 @@ def combined_scrappers(list):
             review.append(list(df_appstore["review"]))
 
         if items == "twitter":
+            print ("\n\nExtracting Tweets\n")
+
             twitter_scrapper()
             df_tweets = pd.read_csv("./Tweets.csv", index_col=0)
             df_tweets.insert(0, 'Source', 'twitter')
@@ -347,6 +354,7 @@ def combined_scrappers(list):
             review.append(list(df_tweets["Text"]))
 
         if items == "facebook":
+            print ("\n\nExtracting Facebook Comments")
             facebook_scrapper()
             df_facebook = pd.read_csv("./Facebook_YAP.csv", index_col=0)
             df_facebook.insert(0, 'Source', 'facebook')
@@ -356,6 +364,7 @@ def combined_scrappers(list):
             review.append(list(df_facebook["comment_text"]))
 
         if items == "instagram":
+            print ("\n\nExtracting Instagram Comments")
             instagram_scrapper()
             df_yap_insta= pd.read_csv("./Instagram_yap.csv", index_col=0)
             df_yappak_insta= pd.read_csv("./Instagram_yappakistan.csv", index_col=0)
@@ -398,19 +407,10 @@ def combined_scrappers(list):
 
     final_df.to_csv("complete_data.csv")
 
-
-def model():
-
-    # Useful Librarie
-    from keras.preprocessing.text import Tokenizer
-    from keras.preprocessing.sequence import pad_sequences
-    from keras.models import Sequential
-    from keras.layers import LSTM,Dense, Dropout, SpatialDropout1D
-    from keras.layers import Embedding
-
+def ml_model():
     
     # Reading data sets for training our model
-    df_tweets_entire = pd.read_csv("./Tweets.csv")
+    df_tweets_entire = pd.read_csv("./training_data.csv")
     df_roman_entire = pd.read_csv("./Roman Urdu DataSet.csv")
     use_cols=['Char','Neg','Neut','Pos']
     df_emojis_entire  = pd.read_csv("./emojis.csv", usecols=use_cols)
@@ -445,30 +445,10 @@ def model():
     df_emojis  = df_emojis_entire[["Comment", "Sentiment"]].copy(deep=True)
     df_emojis.drop(df_emojis.index[0], inplace=True)
 
-    # In[1]
-    # Checking data frame of tweets
-    df_tweets.head()
-    # In[1]
-    print(df_tweets.shape)
-
-    # In[1]
-    # Checking data frame of roman
-    df_roman.head()
-    # In[1]
-    print(df_roman.shape)
-
-    # In[1]
-    # Checking data frame of roman
-    df_emojis.head()
-    # In[1]
-    print(df_emojis.shape)
-
-    # In[1]
     # Combining into one data frame
     frames = [df_tweets, df_roman, df_emojis]
     df = pd.concat(frames)
 
-    # In[1]
     # Adding rows in df for emoticon tagging
     row1 = {'Comment': 'happy', 'Sentiment': 'positive'}
     row2 = {'Comment': 'sad', 'Sentiment': 'negative'}
@@ -476,18 +456,10 @@ def model():
     df = df.append(row2, ignore_index = True)
     df
 
-    # In[1]
-    # Checking merged data frame
-    df.head()
-    # %%
-    print(df.shape)
-
-    # %%
     # factorizing the tags into 0 and 1 from Sentiment column
     factorized_sentiment = df.Sentiment.factorize()
     factorized_sentiment
 
-    # %%
     # Tokenization of the Comment column
     comments = df.Comment.values
     tokenizer = Tokenizer(num_words=5000)
@@ -495,19 +467,6 @@ def model():
     vocab_size = len(tokenizer.word_index) + 1
     encoded_docs = tokenizer.texts_to_sequences(comments)
     padded_sequence = pad_sequences(encoded_docs, maxlen=200)
-
-    
-    # printing word index
-    print(tokenizer.word_index)
-
-    # printing tweets and their encoded docs
-    print(comments[0])
-    print(encoded_docs[0])
-
-    
-    # printing the padded sequence
-    print(padded_sequence[0])
-
     
     # building the model
     embedding_vector_length = 32
@@ -549,55 +508,13 @@ def model():
         return factorized_sentiment[1][prediction]
 
     
-    # testing 
-    test_sentence1 = "I enjoyed my journey on this flight."
-    print(predict_sentiment(test_sentence1))
-
-    test_sentence2 = "This is the worst flight experience of my life!"
-    print(predict_sentiment(test_sentence2))
-
-    
-    # testing
-    test_sentence3 = "bura ha"
-    print(predict_sentiment(test_sentence3))
-
-    
-    # testing
-    test_sentence4 = "😭"
-    print(predict_sentiment(test_sentence4))
-    
-
-    
-    # emoticons work
-    emoticon = {":-)":"happy", ":)":"happy", ":-(":"sad", ":(":"sad", ":*":"happy", ";)":"happy", ";-)":"happy", "<3":"happy", ":/":"sad"}
-    test_sentence5 = ":-("
-    split_test5 = test_sentence5.split()
-
-    reformed = []
-    for i in split_test5:
-        if i in emoticon:
-            reformed.append(emoticon[i])
-        else:
-            reformed.append(i)
-
-    final_test_senetence5 = " ".join(reformed)
-    print(final_test_senetence5)
-
-    
-    print(predict_sentiment(final_test_senetence5))
-    print(predict_sentiment("I love this app"))
-
-    
     # importing complete data set and converting it to lower case
     # df_test = pd.read_csv("./complete_data.csv")
-    df_test = pd.read_csv("./final_csv_file.csv")
+    df_test = pd.read_csv("./complete_data.csv")
     # df_test['Review'] = df_test['Review'].str.lower()
     # df_test['Review'] = df_test['Review'].to_string(na_rep='').lower()
     df_test["Review"]= df_test["Review"].map(str)
     df_test["Review"] = df_test["Review"].apply(str.lower)
-
-    df_test.head(5)    
-    print(df_test["Review"])
 
     # Running data set on the new model
     count = 0
@@ -605,13 +522,6 @@ def model():
     for i in df_test["Review"]:
         df_test["Sentiment"][count] = predict_sentiment(i)
         count += 1
-
-    # Reviewing final data frame
-    df_test.head(5)
-
-    # Printing shape of data set
-    df_test.shape
-    df_test['Review']
 
     # Converting data frame to a csv file
     df_test.to_csv('final_data.csv')
@@ -626,3 +536,15 @@ def model():
     plt.savefig('wordcloud.png')
     plt.show()
     
+
+def main():
+    print ("\nRunning Sentiment Analysis For:\n", scraper_list)
+    combined_scrappers()
+
+    print ("\nPredicting Sentiment Using ML Model\n")
+    ml_model()
+
+    print("\n\nFinal Data CSV Created!!")
+
+if __name__ == "__main__":
+    main()
