@@ -15,7 +15,8 @@
 # write the following comma seperated in inverted columns between the [] below:
 # for example scraper_list = ["playstore" , "appstore"] 
 
-scraper_list = ["playstore" , "appstore" ,"twitter" , "facebook" ,"instagram"]
+# scraper_list = ["playstore" , "appstore" ,"twitter" , "instagram", "facebook"]
+scraper_list = ["playstore" , "appstore" ,"twitter" , "instagram"]
 
 
 
@@ -28,13 +29,13 @@ from google_play_scraper import Sort, reviews_all
 from app_store_scraper import AppStore
 import snscrape.modules.twitter as sntwitter
 import matplotlib.pyplot as plt
-from http import cookies
 from facebook_scraper import get_posts
 from datetime import date
+import time
 import datetime
 import pandas as pd
 import numpy as np
-# running wordcloud code
+import os
 from wordcloud import WordCloud, STOPWORDS
 import nltk
 from nltk.corpus import stopwords
@@ -231,6 +232,8 @@ def instagram_scrapper():
     # Follow the link below to create one
     # https://instaloader.github.io/troubleshooting.html#login-error
 
+    # insta.load_session_from_file("shanzaysaeed")
+
     login_file = open("insta_login.txt", "r")
     login_data  = login_file.readline()
     creds = login_data.split(" ")
@@ -242,7 +245,9 @@ def instagram_scrapper():
     # Enter Search Query ("yap", "yappakistan", "yapuae")
 
     def insta_comment(search_query):
+
         search_username = search_query
+
 
         # Extracting Posts and their Comments
         posts_data = []
@@ -272,6 +277,7 @@ def instagram_scrapper():
         labels = ["Post_ID", "Post_Profile", "Post_Caption", "Post_Date", "Post_URL", "Post_Likes", "Post_Comments", "Comment_ID", "Comment_Username", "Comment_Text", "Comment_Time"]
         insta_df = pd.DataFrame(posts_data, columns=labels)
 
+
         # Data Cleaning
         spec_chars = ["!",'"',"#","%","&","'","(",")",
                     "*","+",",","-",".","/",":",";","<",
@@ -291,8 +297,10 @@ def instagram_scrapper():
 
         insta_df.to_csv(file_name)
 
-    insta_comment("yap")
     insta_comment("yappakistan")
+    time.sleep(10)
+    insta_comment("yap")
+    time.sleep(10)
     insta_comment("yapuae")
 
 def combined_scrappers():
@@ -328,8 +336,8 @@ def combined_scrappers():
 
         if items == "twitter":
             print ("\n\nExtracting Tweets\n")
-
             twitter_scrapper()
+            os.system('cls')
             df_tweets = pd.read_csv("./Tweets.csv", index_col=0)
             df_tweets.insert(0, 'Source', 'twitter')
 
@@ -355,13 +363,13 @@ def combined_scrappers():
 
         if items == "facebook":
             print ("\n\nExtracting Facebook Comments")
-            facebook_scrapper()
-            df_facebook = pd.read_csv("./Facebook_YAP.csv", index_col=0)
-            df_facebook.insert(0, 'Source', 'facebook')
-            source.append(list(df_facebook["Source"]))
-            dates.append(list(df_facebook["comment_time"]))
-            username.append(list(df_facebook["commenter_name"]))
-            review.append(list(df_facebook["comment_text"]))
+            # facebook_scrapper()
+            # df_facebook = pd.read_csv("./Facebook_YAP.csv", index_col=0)
+            # df_facebook.insert(0, 'Source', 'facebook')
+            # source.append(list(df_facebook["Source"]))
+            # dates.append(list(df_facebook["comment_time"]))
+            # username.append(list(df_facebook["commenter_name"]))
+            # review.append(list(df_facebook["comment_text"]))
 
         if items == "instagram":
             print ("\n\nExtracting Instagram Comments")
