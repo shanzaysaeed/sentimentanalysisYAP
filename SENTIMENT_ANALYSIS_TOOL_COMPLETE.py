@@ -8,9 +8,7 @@
 # FOR "GOOGLE STORE" WRITE: playstore
 # FOR "APPLE STORE" WRITE: appstore
 # FOR "TWITTER" WRITE: twitter
-# FOR "INSTAGRAM = YAP " WRITE: yap_global
-# FOR "INSTAGRAM = YAP PAKISTAN " WRITE: yap_pak
-# FOR "INSTAGRAM = YAP UAE " WRITE: yap_uae
+# FOR "INSTAGRAM" WRITE: instagram
 
 # write the following comma seperated in inverted columns between the [] below:
 # for example scraper_list = ["playstore" , "appstore"] 
@@ -113,6 +111,7 @@ def appstore_scrapper():
     df_reviews.to_csv('AppStore.csv')
 
 def twitter_scrapper():
+    print ("\n\nExtracting Tweets\n")
     # Creating list to append tweet data to
     tweets_list = []
 
@@ -186,44 +185,45 @@ def facebook_scrapper():
     # Else when Reading login creds from from file
     # When using credentails: (Uncomment the code below) 
     
-    login_file = open("fb_login.txt", "r")
-    login_data  = login_file.readline()
-    cred = login_data.split(" ")
-    email = str(cred[0])
-    password = str(cred[1])
+    # login_file = open("fb_login.txt", "r")
+    # login_data  = login_file.readline()
+    # cred = login_data.split(" ")
+    # email = str(cred[0])
+    # password = str(cred[1])
 
-    creds = (str(email), str(password))
+    # creds = (str(email), str(password))
 
-    posts = get_posts("YAP", pages = 100, credentials=creds, options={"comments": True})
+    # posts = get_posts("YAP", pages = 100, credentials=creds, options={"comments": True})
 
-    data_all = []
-    for post in posts:
-        # print (post['post_id'] + " /get")
-        for i in range (len(post['comments_full'])):
-            data = []
-            data.extend([post['post_id'], post['time'], post['username'], post['post_text'], post['post_url'], post['likes'], post['comments']])
-            data.extend([post['comments_full'][i]['commenter_name'], post['comments_full'][i]['comment_text'], post['comments_full'][i]['comment_time']])
-            data_all.append(data)
+    # data_all = []
+    # for post in posts:
+    #     # print (post['post_id'] + " /get")
+    #     for i in range (len(post['comments_full'])):
+    #         data = []
+    #         data.extend([post['post_id'], post['time'], post['username'], post['post_text'], post['post_url'], post['likes'], post['comments']])
+    #         data.extend([post['comments_full'][i]['commenter_name'], post['comments_full'][i]['comment_text'], post['comments_full'][i]['comment_time']])
+    #         data_all.append(data)
 
-    label = ["post_id", 'post_time', 'username', 'post_text', 'post_url', 'likes', 'comments', 'commenter_name', 'comment_text', 'comment_time']
-    new_df = pd.DataFrame(data_all, columns=label)
+    # label = ["post_id", 'post_time', 'username', 'post_text', 'post_url', 'likes', 'comments', 'commenter_name', 'comment_text', 'comment_time']
+    # new_df = pd.DataFrame(data_all, columns=label)
 
-    spec_chars = ["!",'"',"#","%","&","'","(",")",
-                "*","+",",","-",".","/",":",";","<",
-                "=",">","?","@","[","\\","]","^","_",
-                "`","{","|","}","~","–"]
+    # spec_chars = ["!",'"',"#","%","&","'","(",")",
+    #             "*","+",",","-",".","/",":",";","<",
+    #             "=",">","?","@","[","\\","]","^","_",
+    #             "`","{","|","}","~","–"]
 
-    for char in spec_chars:
-        new_df['comment_text'] = new_df['comment_text'].str.replace(char, ' ')
+    # for char in spec_chars:
+    #     new_df['comment_text'] = new_df['comment_text'].str.replace(char, ' ')
 
-    new_df['comment_text'] = new_df['comment_text'].str.split().str.join(" ")
+    # new_df['comment_text'] = new_df['comment_text'].str.split().str.join(" ")
 
-    new_df['comment_text'] = new_df['comment_text'].str.replace('[^A-Za-z0-9 ]', '')
+    # new_df['comment_text'] = new_df['comment_text'].str.replace('[^A-Za-z0-9 ]', '')
 
-    new_df = new_df.dropna(subset=['comment_text'])
+    # new_df = new_df.dropna(subset=['comment_text'])
 
-    # Converting and Saving Dataframe as CSV
-    new_df.to_csv('Facebook_YAP.csv')
+    # # Converting and Saving Dataframe as CSV
+    # new_df.to_csv('Facebook_YAP.csv')
+    print ("\nFacebook Scraper\n")
 
 def instagram_scrapper():
 
@@ -335,7 +335,6 @@ def combined_scrappers():
             review.append(list(df_appstore["review"]))
 
         if items == "twitter":
-            print ("\n\nExtracting Tweets\n")
             twitter_scrapper()
             os.system('cls')
             df_tweets = pd.read_csv("./Tweets.csv", index_col=0)
@@ -496,7 +495,6 @@ def ml_model():
     plt.plot(history.history['accuracy'], label='acc')
     plt.plot(history.history['val_accuracy'], label='val_acc')
     plt.legend()
-    plt.show()
     plt.savefig("Accuracy plot.jpg")
 
     
@@ -504,7 +502,6 @@ def ml_model():
     plt.plot(history.history['loss'], label='loss')
     plt.plot(history.history['val_loss'], label='val_loss')
     plt.legend()
-    plt.show()
     plt.savefig("Loss plot.jpg")
 
     
@@ -532,7 +529,7 @@ def ml_model():
         count += 1
 
     # Converting data frame to a csv file
-    df_test.to_csv('final_data.csv')
+    df_test.to_csv('final_data.csv', index=False)
     
     # Create stopword list:
     stopwords = set(STOPWORDS)
@@ -542,10 +539,10 @@ def ml_model():
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis("off")
     plt.savefig('wordcloud.png')
-    plt.show()
     
 
 def main():
+    os.system("cls")
     print ("\nRunning Sentiment Analysis For:\n", scraper_list)
     combined_scrappers()
 
