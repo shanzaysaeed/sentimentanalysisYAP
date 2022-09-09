@@ -175,7 +175,8 @@ def facebook_scrapper():
     cookies="cookies.json", 
     credentials=creds, 
     options={"comments": True},  
-    extra_info=True, 
+    extra_info=True,
+    timeout=60 
     '''
 
     # 2 ALTERNATIVES: 
@@ -302,6 +303,7 @@ def instagram_scrapper():
     insta_comment("yap")
     time.sleep(10)
     insta_comment("yapuae")
+
 
 def combined_scrappers():
     
