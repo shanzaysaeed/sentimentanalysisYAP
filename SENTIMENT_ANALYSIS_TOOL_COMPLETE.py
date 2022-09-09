@@ -14,8 +14,8 @@
 # for example scraper_list = ["playstore" , "appstore"] 
 
 # scraper_list = ["playstore" , "appstore" ,"twitter" , "instagram", "facebook"]
-scraper_list = ["playstore" , "appstore" ,"twitter" , "instagram"]
-
+scraper_list = [ "instagram"]
+instagram_pages_list = ["yap",  "yappakistan", "yapuae"]
 
 
 # ❌❌❌❌❌❌DONOT EDIT THE CODE BELOW ❌❌❌❌❌
@@ -290,18 +290,14 @@ def instagram_scrapper():
         insta_df['Comment_Text'] = insta_df['Comment_Text'].str.split().str.join(" ")
 
         insta_df['Comment_Text'] = insta_df['Comment_Text'].str.replace('[^A-Za-z0-9 ]', '')
-
         insta_df = insta_df.dropna(subset=['Comment_Text'])
-
         file_name = "Instagram_" + search_query + ".csv"
-
         insta_df.to_csv(file_name)
 
-    insta_comment("yappakistan")
-    time.sleep(10)
-    insta_comment("yap")
-    time.sleep(10)
-    insta_comment("yapuae")
+    for pages in instagram_pages_list:
+        insta_comment(pages)
+        time.sleep(10)
+   
 
 def combined_scrappers():
     
@@ -373,28 +369,20 @@ def combined_scrappers():
         if items == "instagram":
             print ("\n\nExtracting Instagram Comments")
             instagram_scrapper()
-            df_yap_insta= pd.read_csv("./Instagram_yap.csv", index_col=0)
-            df_yappak_insta= pd.read_csv("./Instagram_yappakistan.csv", index_col=0)
-            df_yapuae_insta= pd.read_csv("./Instagram_yapuae.csv", index_col=0)
-            
-            df_yap_insta.insert(0, 'Source', 'instagram')
-            df_yappak_insta.insert(0, 'Source', 'PAK instagram')
-            df_yapuae_insta.insert(0, 'Source', 'UAE instagram')
-            
-            source.append(list(df_yap_insta["Source"]))
-            dates.append(list(df_yap_insta["Comment_Time"]))
-            username.append(list(df_yap_insta["Comment_Username"]))
-            review.append(list(df_yap_insta["Comment_Text"]))
 
-            source.append(list(df_yappak_insta["Source"]))
-            dates.append(list(df_yappak_insta["Comment_Time"]))
-            username.append(list(df_yappak_insta["Comment_Username"]))
-            review.append(list(df_yappak_insta["Comment_Text"]))
-        
-            source.append(list(df_yapuae_insta["Source"]))
-            dates.append(list(df_yapuae_insta["Comment_Time"]))
-            username.append(list(df_yapuae_insta["Comment_Username"]))
-            review.append(list(df_yapuae_insta["Comment_Text"]))
+            for i in range(len(instagram_pages_list)):
+                filename = "./Instagram_" + instagram_pages_list[i] + ".csv" 
+                dataframe = []
+                dataframe.append( pd.read_csv(filename, index_col=0) )
+            
+            for i in range(len(dataframe)):
+                dataframe[i].insert(0, 'Source', instagram_pages_list[i])
+
+            for i in range(len(dataframe)):
+                source.append(list(dataframe[i]["Source"]))
+                dates.append(list(dataframe[i]["Comment_Time"]))
+                username.append(list(dataframe[i]["Comment_Username"]))
+                review.append(list(dataframe[i]["Comment_Text"]))
 
     # Flatening out the final list
     source = [item for sublist in source for item in sublist]
@@ -546,8 +534,8 @@ def main():
     print ("\nRunning Sentiment Analysis For:\n", scraper_list)
     combined_scrappers()
 
-    print ("\nPredicting Sentiment Using ML Model\n")
-    ml_model()
+    # print ("\nPredicting Sentiment Using ML Model\n")
+    # ml_model()
 
     print("\n\nFinal Data CSV Created!!")
 
