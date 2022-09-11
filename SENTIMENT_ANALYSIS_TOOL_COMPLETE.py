@@ -1,5 +1,4 @@
 #THIS FILE CONTAINS COMPLETE SENTIMENT ANALYSIS TOOL.
-# newpush
 # If you want to turn off or on a specific scraper read the following instruction:
 # Write the names of the scrapers you want to turn ON in front of scraper-list
 # use the names exactly as follows:
@@ -13,36 +12,40 @@
 # write the following comma seperated in inverted columns between the [] below:
 # for example scraper_list = ["playstore" , "appstore"] 
 
-# scraper_list = ["playstore" , "appstore" ,"twitter" , "instagram", "facebook"]
-scraper_list = [ "instagram"]
-instagram_pages_list = ["yap",  "yappakistan", "yapuae"]
+scraper_list = ["playstore" , "appstore" ,"twitter" , "instagram", "facebook"]
+
+# Write Instagram page Usernames in the the list below to scrape
+instagram_pages_list = ["yap",  "yappakistan", "yapuae", "yapghana"]
+# Write Facebook page names in the the list below to scrape
+facebook_pages_list = ["YAP",  "YAPPakistan", 'YAPghana']
 
 
 # ❌❌❌❌❌❌DONOT EDIT THE CODE BELOW ❌❌❌❌❌
 
 # Useful Libraries 
-from google_play_scraper import app
-import instaloader
-from google_play_scraper import Sort, reviews_all
-from app_store_scraper import AppStore
-import snscrape.modules.twitter as sntwitter
-import matplotlib.pyplot as plt
-from facebook_scraper import get_posts
-from datetime import date
-import time
-import datetime
 import pandas as pd
 import numpy as np
+from google_play_scraper import app
+from google_play_scraper import Sort, reviews_all
+from app_store_scraper import AppStore
+import facebook_scraper
+from facebook_scraper import get_posts
+import browser_cookie3
+import instaloader
+import snscrape.modules.twitter as sntwitter
+from googletrans import Translator
+import matplotlib.pyplot as plt
+import time
+import datetime
+from datetime import date
+import json
+import requests
 import os
+from os.path import exists
 from wordcloud import WordCloud, STOPWORDS
 import nltk
 from nltk.corpus import stopwords
-from googletrans import Translator
 from tracemalloc import stop
-from tracemalloc import stop
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
 
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -82,6 +85,7 @@ def playstore_scrapper():
 
     # Converting and Saving Dataframe as CSV
     df_reviews.to_csv('GoogleStore.csv')
+    os.system("cls")
 
 def appstore_scrapper():
     # Extracting Reviews from AppStore using App_Store_Scraper Library
@@ -166,6 +170,7 @@ def twitter_scrapper():
 
     # Converting and Saving Dataframe as CSV
     tweets_df.to_csv('Tweets.csv')
+    os.system("cls")
 
 def facebook_scrapper():
 
@@ -178,12 +183,8 @@ def facebook_scrapper():
     extra_info=True,
     timeout=60 
     '''
-
-    # 2 ALTERNATIVES: 
-    # # when scraping using Cookie File: (Uncomment the line below)
-    # posts = get_posts("YAP", pages = 100, cookies = "cookies.json", options={"comments": True})
    
-    # Else when Reading login creds from from file
+    # when Reading login creds from from file
     # When using credentails: (Uncomment the code below) 
     
     # login_file = open("fb_login.txt", "r")
@@ -194,37 +195,91 @@ def facebook_scrapper():
 
     # creds = (str(email), str(password))
 
-    # posts = get_posts("YAP", pages = 100, credentials=creds, options={"comments": True})
+    def getCookiesFromDomain(domain,cookieName=''):
 
-    # data_all = []
-    # for post in posts:
-    #     # print (post['post_id'] + " /get")
-    #     for i in range (len(post['comments_full'])):
-    #         data = []
-    #         data.extend([post['post_id'], post['time'], post['username'], post['post_text'], post['post_url'], post['likes'], post['comments']])
-    #         data.extend([post['comments_full'][i]['commenter_name'], post['comments_full'][i]['comment_text'], post['comments_full'][i]['comment_time']])
-    #         data_all.append(data)
+        Cookies={}
+        chromeCookies = list(browser_cookie3.chrome())
 
-    # label = ["post_id", 'post_time', 'username', 'post_text', 'post_url', 'likes', 'comments', 'commenter_name', 'comment_text', 'comment_time']
-    # new_df = pd.DataFrame(data_all, columns=label)
+        for cookie in chromeCookies:
 
-    # spec_chars = ["!",'"',"#","%","&","'","(",")",
-    #             "*","+",",","-",".","/",":",";","<",
-    #             "=",">","?","@","[","\\","]","^","_",
-    #             "`","{","|","}","~","–"]
+            if (domain in cookie.domain):
+                #print (cookie.name, cookie.domain,cookie.value)
+                Cookies[cookie.name]=cookie.value
 
-    # for char in spec_chars:
-    #     new_df['comment_text'] = new_df['comment_text'].str.replace(char, ' ')
+        if(cookieName!=''):
+            try:
+                return Cookies[cookieName] #return specified cookie
+            except:
+                return {} #if exception raised return an empty dictionary
+        else:
+            return Cookies #return all cookies or nothing
 
-    # new_df['comment_text'] = new_df['comment_text'].str.split().str.join(" ")
+    def fb_cookie():
+        fb_cookie = getCookiesFromDomain('facebook')
 
-    # new_df['comment_text'] = new_df['comment_text'].str.replace('[^A-Za-z0-9 ]', '')
+        with open("fb_cookies.json", "w") as outfile:
+            json.dump(fb_cookie, outfile)
+        
+    def fb_scraper(page_name):
+        print ("\nScraping Comments from Facebook Page:", page_name, "\n")
 
-    # new_df = new_df.dropna(subset=['comment_text'])
+        try:
+            posts = get_posts(page_name, pages=100, timeout=60, cookies="fb_cookies.json", options={"comments": True})
+        except facebook_scraper.exceptions.InvalidCookies:
+            print ("\nRefreshing Cookies\n")
+            input ("Please login onto Facebook using Chrome and then Press Enter")
+            fb_cookie()
+            posts = get_posts(page_name, pages=100, timeout=60, cookies="fb_cookies.json", options={"comments": True})
+        except requests.exceptions.SSLError:
+            posts = get_posts(page_name, pages=100, timeout=60, cookies="fb_cookies.json", options={"comments": True})
+        except requests.exceptions.ReadTimeout:
+            posts = get_posts(page_name, pages=100, timeout=60, cookies="fb_cookies.json", options={"comments": True})
+        finally:
+            data_all = []
+            for post in posts:
+                print (post['post_id'] + " /get")
+                for i in range (len(post['comments_full'])):
+                    data = []
+                    data.extend([post['post_id'], post['time'], post['username'], post['post_text'], post['post_url'], post['likes'], post['comments']])
+                    data.extend([post['comments_full'][i]['commenter_name'], post['comments_full'][i]['comment_text'], post['comments_full'][i]['comment_time']])
+                    data_all.append(data)
 
-    # # Converting and Saving Dataframe as CSV
-    # new_df.to_csv('Facebook_YAP.csv')
-    print ("\nFacebook Scraper\n")
+            label = ["post_id", 'post_time', 'username', 'post_text', 'post_url', 'likes', 'comments', 'commenter_name', 'comment_text', 'comment_time']
+            new_df = pd.DataFrame(data_all, columns=label)
+
+            spec_chars = ["!",'"',"#","%","&","'","(",")",
+                        "*","+",",","-",".","/",":",";","<",
+                        "=",">","?","@","[","\\","]","^","_",
+                        "`","{","|","}","~","–"]
+
+            for char in spec_chars:
+                new_df['comment_text'] = new_df['comment_text'].str.replace(char, ' ')
+
+            new_df['comment_text'] = new_df['comment_text'].str.split().str.join(" ")
+
+            new_df['comment_text'] = new_df['comment_text'].str.replace('[^A-Za-z0-9 ]', '')
+
+            new_df = new_df.dropna(subset=['comment_text'])
+
+            # Converting and Saving Dataframe as CSV
+            file_name = "Facebook_" + page_name + ".csv"
+            new_df.to_csv(file_name)
+            os.system("cls")
+
+        
+    file_exists = exists('fb_cookies.json')
+
+    if file_exists:
+        print ("\nCookie file found \n")
+        pass
+    else:
+        print ("\nCookie file not found. Creating new cookie file\n")
+        input ("Please login onto Facebook using Chrome and then Press Enter")
+        fb_cookie()
+
+    for pages in facebook_pages_list:
+        fb_scraper(pages)
+        time.sleep(10)
 
 def instagram_scrapper():
 
@@ -249,6 +304,7 @@ def instagram_scrapper():
 
         search_username = search_query
 
+        print ("\nScraping Comments from Instagram Page:", search_username, "\n")
 
         # Extracting Posts and their Comments
         posts_data = []
@@ -294,12 +350,12 @@ def instagram_scrapper():
         insta_df = insta_df.dropna(subset=['Comment_Text'])
         file_name = "Instagram_" + search_query + ".csv"
         insta_df.to_csv(file_name)
+        os.system("cls")
 
     for pages in instagram_pages_list:
         insta_comment(pages)
-        time.sleep(10)
+        time.sleep(20)
    
-
 
 def combined_scrappers():
     
@@ -360,31 +416,45 @@ def combined_scrappers():
 
         if items == "facebook":
             print ("\n\nExtracting Facebook Comments")
-            # facebook_scrapper()
-            # df_facebook = pd.read_csv("./Facebook_YAP.csv", index_col=0)
-            # df_facebook.insert(0, 'Source', 'facebook')
-            # source.append(list(df_facebook["Source"]))
-            # dates.append(list(df_facebook["comment_time"]))
-            # username.append(list(df_facebook["commenter_name"]))
-            # review.append(list(df_facebook["comment_text"]))
+            facebook_scrapper()
+
+            dataframe = []
+            for i in range(len(facebook_pages_list)):
+                filename = "./Facebook_" + facebook_pages_list[i] + ".csv" 
+                dataframe.append( pd.read_csv(filename, index_col=0) )
+
+                
+            for j in range(len(dataframe)):
+                fb_source = "Facebook " + facebook_pages_list[j]
+                dataframe[j].insert(0, 'Source', fb_source)
+
+
+            for k in range(len(dataframe)):
+                source.append(list(dataframe[k]["Source"]))
+                dates.append(list(dataframe[k]["comment_time"]))
+                username.append(list(dataframe[k]["commenter_username"]))
+                review.append(list(dataframe[k]["comment_text"]))
 
         if items == "instagram":
             print ("\n\nExtracting Instagram Comments")
             instagram_scrapper()
 
+            dataframe = []
             for i in range(len(instagram_pages_list)):
                 filename = "./Instagram_" + instagram_pages_list[i] + ".csv" 
-                dataframe = []
                 dataframe.append( pd.read_csv(filename, index_col=0) )
-            
-            for i in range(len(dataframe)):
-                dataframe[i].insert(0, 'Source', instagram_pages_list[i])
 
-            for i in range(len(dataframe)):
-                source.append(list(dataframe[i]["Source"]))
-                dates.append(list(dataframe[i]["Comment_Time"]))
-                username.append(list(dataframe[i]["Comment_Username"]))
-                review.append(list(dataframe[i]["Comment_Text"]))
+                
+            for j in range(len(dataframe)):
+                insta_source = "Instagram " + instagram_pages_list[j]
+                dataframe[j].insert(0, 'Source', insta_source)
+
+
+            for k in range(len(dataframe)):
+                source.append(list(dataframe[k]["Source"]))
+                dates.append(list(dataframe[k]["Comment_Time"]))
+                username.append(list(dataframe[k]["Comment_Username"]))
+                review.append(list(dataframe[k]["Comment_Text"]))
 
     # Flatening out the final list
     source = [item for sublist in source for item in sublist]
@@ -403,6 +473,7 @@ def combined_scrappers():
     final_df["Review"] = review
 
     final_df.to_csv("complete_data.csv")
+
 
 def ml_model():
     
@@ -536,8 +607,8 @@ def main():
     print ("\nRunning Sentiment Analysis For:\n", scraper_list)
     combined_scrappers()
 
-    # print ("\nPredicting Sentiment Using ML Model\n")
-    # ml_model()
+    print ("\nPredicting Sentiment Using ML Model\n")
+    ml_model()
 
     print("\n\nFinal Data CSV Created!!")
 
