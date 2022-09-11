@@ -14,8 +14,8 @@
 
 scraper_list = ["playstore" , "appstore" ,"twitter" , "instagram", "facebook"]
 
-# Write Instagram page Usernames in the the list below to scrape
-instagram_pages_list = ["yap",  "yappakistan", "yapuae", "yapghana"]
+# Write Instagram page Usernames in the the list below to scrape 
+instagram_pages_list = ["yappakistan", "yapuae", "yapghana", "yap"] #(Put the page with username yap at last of list)
 # Write Facebook page names in the the list below to scrape
 facebook_pages_list = ["YAP",  "YAPPakistan", 'YAPghana']
 
@@ -354,7 +354,7 @@ def instagram_scrapper():
 
     for pages in instagram_pages_list:
         insta_comment(pages)
-        time.sleep(20)
+        time.sleep(60)
    
 
 def combined_scrappers():
@@ -432,7 +432,7 @@ def combined_scrappers():
             for k in range(len(dataframe)):
                 source.append(list(dataframe[k]["Source"]))
                 dates.append(list(dataframe[k]["comment_time"]))
-                username.append(list(dataframe[k]["commenter_username"]))
+                username.append(list(dataframe[k]["commenter_name"]))
                 review.append(list(dataframe[k]["comment_text"]))
 
         if items == "instagram":
