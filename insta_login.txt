@@ -1,1 +1,1 @@
-username Pass
+username Password
